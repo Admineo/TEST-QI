@@ -1,23 +1,17 @@
 # TEST-QI Premium
 
-Quiz ludique de logique en français, optimisé pour les écrans Android et mobiles.
+Quiz ludique de logique en français, optimisé pour Android et les écrans mobiles.
 
-## Fonctionnalités
+## Contenu et fonctionnalités
 
-- Exactement 30 questions en 30 minutes : raisonnement, calcul mental et observation visuelle.
-- Minuteur et progression.
-- Résultat sur 30, pourcentage et détails par domaine.
-- Correction complète avec explications après le quiz.
-- Partage via le menu natif Android lorsque disponible, ou copie du résultat.
-- Sauvegarde locale du résultat dans le navigateur et téléchargement d’un fichier texte.
-- Installation comme application web (PWA) et service worker hors ligne, après publication HTTPS.
+- Une réserve intégrée de **150 questions** : 50 de logique, 50 de calcul mental et 50 d’observation visuelle.
+- Chaque partie tire **30 questions au hasard, sans répétition dans la partie**, avec 10 questions par domaine. Une nouvelle partie effectue un nouveau tirage.
+- Test chronométré à 30 minutes, résultat sur 30, partage et sauvegarde locale.
+- Bouton **Voir la correction** après le résultat, avec votre réponse, la bonne réponse, les explications et les visuels des questions concernées.
+- Installation web sur Android et mode hors ligne après publication HTTPS.
 
-## Démarrer
+## Lancer le test
 
 Ouvrez `index.html` dans un navigateur moderne. Pour l’installation Android et le fonctionnement hors ligne, publiez le site en HTTPS, ouvrez-le dans Chrome Android, puis choisissez **Installer l’application** ou **Ajouter à l’écran d’accueil**.
 
-La sauvegarde est stockée localement dans le navigateur de l’appareil ; elle n’est pas synchronisée entre téléphones. Le fichier téléchargé peut être conservé ou envoyé manuellement.
-
-## Important
-
-Ce test est un jeu de logique et ne mesure pas le QI. Les résultats ne constituent pas une évaluation psychométrique ou professionnelle.
+La sauvegarde est stockée sur l’appareil et n’est pas synchronisée entre téléphones. Ce quiz est un jeu de logique et ne mesure pas le QI.

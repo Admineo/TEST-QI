@@ -1,7 +1,7 @@
 /* Results, question visuals, and answer review */
 .category-label { display: inline-flex; margin: -4px 0 12px; padding: 6px 10px; border: 1px solid rgba(125, 211, 252, .25); border-radius: 999px; background: rgba(125, 211, 252, .07); color: #d7efff; font-size: .75rem; font-weight: 750; }
 .question-visual { display: grid; place-items: center; min-height: 100px; margin: -4px 0 20px; padding: 10px; border: 1px solid var(--line); border-radius: 16px; background: rgba(16, 28, 43, .76); }
-.question-visual svg { display: block; width: min(100%, 360px); max-height: 150px; }
+.question-visual svg, .review-visual svg { display: block; width: min(100%, 360px); max-height: 150px; margin: auto; }
 .category-heading { margin: 24px 0 12px; color: var(--text); font-size: 1.1rem; letter-spacing: -.02em; }
 .category-results { display: grid; gap: 9px; text-align: left; }
 .category-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 13px; background: rgba(17, 27, 39, .82); color: var(--muted); font-size: .9rem; }
@@ -22,4 +22,5 @@
 .review-card p { margin: 7px 0; color: var(--muted); font-size: .88rem; line-height: 1.55; }
 .review-card .review-explanation { color: var(--muted-2); }
 .review-category { color: #d7c7ff; font-size: .72rem; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+.review-visual { margin: 10px 0; padding: 8px; border-radius: 10px; background: rgba(16, 28, 43, .76); }
 @media (max-width: 420px) { .result-actions { grid-template-columns: 1fr; } .result-actions #toggle-review { grid-column: auto; } }
