@@ -1,14 +1,16 @@
-# TEST-QI — quiz ludique
+# TEST-QI — défi logique ludique
 
-Interface claire et colorée, adaptée aux mobiles Android. Chaque partie propose 30 questions tirées aléatoirement sans doublon dans une réserve de 150 questions : 50 de logique, 50 de calcul mental et 50 d’observation visuelle. Une correction avec réponses et explications est accessible après la partie.
+Interface claire et colorée, conçue pour Android et les écrans mobiles. Le quiz propose 30 questions en 30 minutes, tirées au hasard et sans répétition dans une réserve de 150 questions réparties en logique, calcul mental et observation visuelle. Trois niveaux de jeu sont proposés : découverte, intermédiaire et expert.
 
-## Âge et données personnelles
+Le prénom/pseudo et la tranche d’âge sont facultatifs. Ils ne sont pas envoyés ni enregistrés par le quiz ; le prénom sert seulement à personnaliser l’écran de résultat. L’âge ne sert pas au calcul du score. Le sexe/genre n’est pas demandé, car il n’est pas nécessaire à ce jeu.
 
-La tranche d’âge est facultative, n’est pas utilisée pour calculer le score et n’est pas enregistrée. Le quiz ne demande pas le sexe/genre : cette donnée n’est pas nécessaire à ce jeu et n’est pas utilisée.
+## Résultat et limites
 
-## À propos du score
+Le résultat est un score ludique de bonnes réponses sur 30. Ce quiz n’est pas un test psychométrique standardisé, ne comporte pas de normes de comparaison validées et ne peut pas mesurer ni estimer le QI. Une évaluation réelle nécessite un outil standardisé, adapté à l’âge et administré/interprété par un professionnel qualifié.
 
-Le résultat est uniquement le nombre de bonnes réponses sur 30 et un pourcentage de réussite au quiz. Il ne s’agit pas d’un score de QI. Ce contenu n’est pas un instrument psychométrique validé, n’a pas de normes de comparaison par âge et ne permet pas d’estimer un QI. Un véritable bilan nécessite un test standardisé validé pour l’âge, administré et interprété par un professionnel qualifié.
+## Soutenir le projet
+
+Les dons PayPal sont facultatifs : [Faire un don](https://www.paypal.com/donate/?business=prestij%40hotmail.fr&currency_code=EUR&item_name=Soutien%20au%20quiz%20de%20logique). Vérifiez dans votre compte PayPal que l’adresse prestij@hotmail.fr est bien associée et que le lien de don est activé avant de diffuser le site.
 
 ## Android
 

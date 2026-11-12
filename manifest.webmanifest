@@ -1,19 +1,12 @@
 {
-  "name": "TEST-QI Premium",
+  "name": "Défi logique",
   "short_name": "TEST-QI",
-  "description": "Quiz de logique premium, 30 questions, 30 minutes, pensé pour Android et les écrans mobiles.",
+  "description": "Quiz ludique mobile de logique, calcul mental et observation.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#070d18",
-  "theme_color": "#070d18",
-  "icons": [
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
+  "background_color": "#fff7ed",
+  "theme_color": "#fff7ed",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
 }
