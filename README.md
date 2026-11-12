@@ -1,17 +1,13 @@
-# TEST-QI — défi logique ludique
+# TEST-QI — quiz mobile
 
-Interface claire et colorée, adaptée aux mobiles Android. Chaque partie propose 30 questions en 30 minutes tirées au hasard sans doublon : 10 questions par domaine, depuis une réserve de 150 questions. Trois niveaux de jeu sont proposés : découverte, intermédiaire et expert.
+Quiz récréatif conçu pour les smartphones Android : interface tactile, fond bleu, 30 questions tirées au hasard d’une réserve de 150, minuteur de 30 minutes, trois niveaux ludiques, logique, calcul mental et observation visuelle. Les résultats incluent le score sur 30, les domaines, le partage, le téléchargement et la correction avec explications.
 
-Le prénom/pseudo et la tranche d’âge sont facultatifs. Ils ne sont pas envoyés ni sauvegardés ; le prénom sert seulement à personnaliser le résultat et l’âge ne change pas le score. Le sexe/genre n’est pas demandé car il n’est pas nécessaire à ce jeu.
+Le prénom et la tranche d’âge sont facultatifs. Ils ne sont pas envoyés ni sauvegardés ; l’âge ne modifie pas le score. Le quiz ne demande pas le sexe/genre.
 
-## Résultat et limites
+**Le score est un résultat de jeu, pas un score de QI.** Ce quiz n’est pas un test psychométrique validé et ne permet pas d’estimer le QI.
 
-Le résultat est un score ludique de bonnes réponses sur 30. Ce quiz n’est pas un instrument psychométrique standardisé et ne peut pas mesurer ni estimer le QI. Une évaluation réelle nécessite un test validé, adapté à l’âge et administré/interprété par un professionnel qualifié.
+Les dons PayPal sont facultatifs : [Faire un don](https://www.paypal.com/paypalme/emrebayram34). Vérifiez que le lien PayPal.Me est actif pour votre compte avant diffusion.
 
-## Soutenir le projet
+Pour installer l’application web sur Android ou l’utiliser hors ligne, publiez le site en HTTPS, ouvrez-le dans Chrome Android et sélectionnez « Installer l’application » ou « Ajouter à l’écran d’accueil ».
 
-Les dons sont facultatifs et passent par PayPal : [Faire un don à emrebayram34](https://www.paypal.com/paypalme/emrebayram34). Vérifiez que le lien PayPal.Me est bien activé et associé à votre compte avant de le diffuser.
-
-## Android
-
-Pour l’installation sur l’écran d’accueil et le mode hors ligne, publiez ce site en HTTPS, ouvrez-le dans Chrome Android et sélectionnez « Installer l’application » ou « Ajouter à l’écran d’accueil ».
+Télécharger le code source en ZIP : https://github.com/Admineo/TEST-QI/archive/refs/heads/main.zip

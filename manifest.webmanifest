@@ -1,12 +1,12 @@
 {
-  "name": "Défi logique",
+  "name": "TEST-QI — Défi logique mobile",
   "short_name": "TEST-QI",
-  "description": "Quiz ludique mobile de logique, calcul mental et observation.",
+  "description": "Quiz récréatif de logique pour smartphone.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#fff7ed",
-  "theme_color": "#fff7ed",
+  "background_color": "#0756a5",
+  "theme_color": "#0756a5",
   "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
 }
