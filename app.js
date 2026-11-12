@@ -1,28 +1,376 @@
-const TOTAL=30,PER_CATEGORY=10,DURATION=30*60,HISTORY_KEY="test-qi-history-v1";
-const categories=window.TEST_QUESTION_CATEGORIES,bank=window.TEST_QUESTION_BANK,$=selector=>document.querySelector(selector);
-if(!Array.isArray(bank)||bank.length!==150)throw new Error("La réserve de questions est indisponible.");
-for(const category of categories)for(const level of ["decouverte","intermediaire","expert"])if(bank.filter(q=>q.category===category&&q.difficulty===level).length<PER_CATEGORY)throw new Error(`Questions insuffisantes : ${category} / ${level}.`);
-const intro=$("#intro"),quiz=$("#quiz"),result=$("#result"),timer=$("#timer"),nameInput=$("#player-name"),difficultyInput=$("#difficulty"),soundToggle=$("#sound-toggle");
-const questionCount=$("#question-count"),progressLabel=$("#progress-label"),progressTrack=$("#progress-track"),progressFill=$("#progress-fill"),categoryLabel=$("#category-label"),title=$("#question-title"),visual=$("#question-visual"),answers=$("#answers"),review=$("#review"),reviewList=$("#review-list"),categoryResults=$("#category-results"),saveStatus=$("#save-status");
-let sessionQuestions=[],userAnswers=[],current=0,score=0,secondsLeft=DURATION,timerId=null,locked=false,finished=false,soundOn=false,audioContext=null,resultData=null,playerName="",level="intermediaire";
-function shuffle(items){const a=[...items];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function drawQuestions(){return shuffle(categories.flatMap(category=>shuffle(bank.filter(q=>q.category===category&&q.difficulty===level)).slice(0,PER_CATEGORY)));}
-function formatTime(n){return`${String(Math.floor(n/60)).padStart(2,"0")}:${String(n%60).padStart(2,"0")}`;}
-function playTone(freq,duration,type="sine"){if(!soundOn)return;const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;if(!audioContext)audioContext=new Ctx();if(audioContext.state==="suspended")audioContext.resume().catch(()=>{});const osc=audioContext.createOscillator(),gain=audioContext.createGain();osc.type=type;osc.frequency.value=freq;gain.gain.setValueAtTime(.03,audioContext.currentTime);gain.gain.exponentialRampToValueAtTime(.0001,audioContext.currentTime+duration);osc.connect(gain);gain.connect(audioContext.destination);osc.start();osc.stop(audioContext.currentTime+duration);}
-function updateTimer(){timer.textContent=formatTime(secondsLeft);timer.classList.toggle("warning",secondsLeft<=30);}
-function startTimer(){clearInterval(timerId);timerId=setInterval(()=>{if(secondsLeft<=1){secondsLeft=0;updateTimer();endQuiz(true);return;}secondsLeft-=1;updateTimer();},1000);}
-function renderQuestion(){const q=sessionQuestions[current],pct=Math.round(current/TOTAL*100);questionCount.textContent=`Question ${current+1} sur ${TOTAL}`;progressLabel.textContent=`${pct} %`;progressTrack.setAttribute("aria-valuenow",String(current));progressFill.style.width=`${pct}%`;categoryLabel.textContent=q.category;title.textContent=q.text;if(q.visual){visual.innerHTML=q.visual;visual.hidden=false;}else{visual.replaceChildren();visual.hidden=true;}answers.replaceChildren();q.options.forEach((text,i)=>{const button=document.createElement("button");button.type="button";button.className="answer";const key=document.createElement("span");key.className="answer-letter";key.setAttribute("aria-hidden","true");key.textContent=String.fromCharCode(65+i);const label=document.createElement("span");label.textContent=text;button.append(key,label);button.addEventListener("click",()=>chooseAnswer(i));answers.append(button);});title.focus({preventScroll:true});}
-function chooseAnswer(index){if(locked||finished)return;locked=true;const q=sessionQuestions[current];userAnswers.push(index);if(index===q.answer){score+=1;playTone(740,.12,"triangle");}else playTone(210,.15,"sawtooth");current+=1;if(current<TOTAL)setTimeout(()=>{locked=false;renderQuestion();},160);else setTimeout(()=>endQuiz(false),160);}
-function levelName(){return level==="decouverte"?"Découverte":level==="expert"?"Expert":"Intermédiaire";}
-function renderDomains(){categoryResults.replaceChildren();for(const category of categories){const items=sessionQuestions.map((q,i)=>({q,i})).filter(x=>x.q.category===category),correct=items.filter(({q,i})=>userAnswers[i]===q.answer).length,row=document.createElement("div");row.className="category-row";const label=document.createElement("span");label.textContent=category;const value=document.createElement("strong");value.textContent=`${correct} / ${items.length}`;const track=document.createElement("span");track.className="category-meter";const fill=document.createElement("span");fill.style.width=`${correct/items.length*100}%`;track.append(fill);row.append(label,value,track);categoryResults.append(row);}}
-function renderReview(){reviewList.replaceChildren();sessionQuestions.forEach((q,i)=>{const chosen=userAnswers[i],right=chosen===q.answer,card=document.createElement("article");card.className=`review-card ${right?"is-correct":"is-wrong"}`;const cat=document.createElement("span");cat.className="review-category";cat.textContent=q.category;const heading=document.createElement("h3");heading.textContent=`${i+1}. ${q.text}`;card.append(cat,heading);if(q.visual){const image=document.createElement("div");image.className="review-visual";image.innerHTML=q.visual;card.append(image);}const response=document.createElement("p");response.textContent=`Votre réponse : ${chosen===undefined?"Sans réponse":q.options[chosen]}${right?" — correcte":` — réponse attendue : ${q.options[q.answer]}`}`;const explanation=document.createElement("p");explanation.className="review-explanation";explanation.textContent=q.explanation;card.append(response,explanation);reviewList.append(card);});}
-function endQuiz(expired){if(finished)return;finished=true;clearInterval(timerId);quiz.hidden=true;result.hidden=false;const percent=Math.round(score/TOTAL*100);$("#result-title").textContent=playerName?`Bravo, ${playerName} !`:"Votre résultat";$("#result-badge").textContent=percent>=80?"Très bon score au jeu":percent>=60?"Bon score au jeu":percent>=40?"En progression":"Défi relevé";$("#score-value").textContent=String(score);$("#score-percent").textContent=`${percent} %`;$("#time-left-result").textContent=formatTime(secondsLeft);$("#result-message").textContent=`Niveau ${levelName()} : ${score} bonne(s) réponse(s) sur ${TOTAL}.`;$("#time-message").textContent=expired?"Temps écoulé : la partie est terminée.":`Temps restant : ${formatTime(secondsLeft)}.`;renderDomains();renderReview();review.hidden=true;$("#toggle-review").textContent="Voir la correction";$("#toggle-review").setAttribute("aria-expanded","false");saveStatus.textContent="";resultData={score,total:TOTAL,percent,secondsLeft,level:levelName(),date:new Date().toISOString()};if(soundOn){playTone(660,.14,"triangle");setTimeout(()=>playTone(880,.12,"triangle"),120);}}
-function startQuiz(){playerName=nameInput.value.trim().replace(/[<>]/g,"").slice(0,24);level=difficultyInput.value;sessionQuestions=drawQuestions();userAnswers=[];current=0;score=0;secondsLeft=DURATION;locked=false;finished=false;resultData=null;intro.hidden=true;result.hidden=true;quiz.hidden=false;updateTimer();startTimer();renderQuestion();}
-function shareText(){return`${playerName?`${playerName} — `:""}Mon résultat au quiz ludique TEST-QI : ${resultData.score}/${resultData.total} (${resultData.percent} %), niveau ${resultData.level}. Ce résultat n’est pas un score de QI.`;}
-async function shareResult(){if(!resultData)return;const text=shareText();if(navigator.share){try{await navigator.share({title:"Résultat de mon quiz logique",text});}catch(error){if(error.name!=="AbortError")saveStatus.textContent="Le partage n’a pas fonctionné.";}return;}try{await navigator.clipboard.writeText(text);saveStatus.textContent="Résultat copié dans le presse-papiers.";}catch{saveStatus.textContent=text;}}
-function saveResult(){if(!resultData)return;const domains=categories.map(category=>{const list=sessionQuestions.map((q,i)=>({q,i})).filter(x=>x.q.category===category);return`${category} : ${list.filter(({q,i})=>userAnswers[i]===q.answer).length}/${list.length}`;}).join("\n");const text=`${shareText()}\nTemps restant : ${formatTime(resultData.secondsLeft)}\n${domains}\n\nCe jeu ne mesure pas le QI.\n`;try{const history=JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]");history.unshift({score:resultData.score,percent:resultData.percent,level:resultData.level,date:resultData.date});localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,20)));}catch{}const blob=new Blob([text],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=`resultat-quiz-logique-${new Date().toISOString().slice(0,10)}.txt`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);saveStatus.textContent="Résultat téléchargé ; une copie locale est conservée si le navigateur l’autorise.";}
-soundToggle.addEventListener("click",()=>{soundOn=!soundOn;soundToggle.textContent=`Son : ${soundOn?"ON":"OFF"}`;soundToggle.setAttribute("aria-pressed",String(soundOn));if(soundOn)playTone(520,.08);});
-$("#start").addEventListener("click",startQuiz);$("#share-result").addEventListener("click",shareResult);$("#save-result").addEventListener("click",saveResult);
-$("#toggle-review").addEventListener("click",event=>{review.hidden=!review.hidden;event.currentTarget.setAttribute("aria-expanded",String(!review.hidden));event.currentTarget.textContent=review.hidden?"Voir la correction":"Masquer la correction";if(!review.hidden)review.scrollIntoView({behavior:"smooth",block:"start"});});
-$("#restart").addEventListener("click",()=>{clearInterval(timerId);result.hidden=true;intro.hidden=false;timer.textContent="30:00";timer.classList.remove("warning");});
-updateTimer();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+const TOTAL_QUESTIONS = 30;
+const QUESTIONS_PER_CATEGORY = 10;
+const TEST_DURATION_SECONDS = 30 * 60;
+const HISTORY_KEY = "test-qi-history-v2";
+const CATEGORIES = window.TEST_QUESTION_CATEGORIES;
+const QUESTION_BANK = window.TEST_QUESTION_BANK;
+const $ = (selector) => document.querySelector(selector);
+
+if (!Array.isArray(QUESTION_BANK) || QUESTION_BANK.length !== 150) {
+  throw new Error("La réserve du quiz doit contenir exactement 150 questions.");
+}
+for (const category of CATEGORIES) {
+  for (const difficulty of ["decouverte", "intermediaire", "expert"]) {
+    const count = QUESTION_BANK.filter((question) => question.category === category && question.difficulty === difficulty).length;
+    if (count < QUESTIONS_PER_CATEGORY) throw new Error(`Réserve insuffisante : ${category}, niveau ${difficulty}.`);
+  }
+}
+
+const intro = $("#intro");
+const quiz = $("#quiz");
+const result = $("#result");
+const timer = $("#timer");
+const nameInput = $("#player-name");
+const difficultyInput = $("#difficulty");
+const soundToggle = $("#sound-toggle");
+const questionCount = $("#question-count");
+const progressLabel = $("#progress-label");
+const progressTrack = $("#progress-track");
+const progressFill = $("#progress-fill");
+const categoryLabel = $("#category-label");
+const questionTitle = $("#question-title");
+const questionVisual = $("#question-visual");
+const answersElement = $("#answers");
+const categoryResults = $("#category-results");
+const review = $("#review");
+const reviewList = $("#review-list");
+const saveStatus = $("#save-status");
+
+let sessionQuestions = [];
+let selectedAnswers = [];
+let currentQuestion = 0;
+let score = 0;
+let secondsLeft = TEST_DURATION_SECONDS;
+let deadline = 0;
+let timerId = null;
+let locked = false;
+let finished = false;
+let soundEnabled = false;
+let audioContext = null;
+let resultData = null;
+let playerName = "";
+let difficulty = "intermediaire";
+let resultSaved = false;
+
+function shuffle(items) {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+}
+
+function drawQuestions() {
+  const questions = CATEGORIES.flatMap((category) => {
+    const available = QUESTION_BANK.filter((question) => question.category === category && question.difficulty === difficulty);
+    return shuffle(available).slice(0, QUESTIONS_PER_CATEGORY);
+  });
+  if (questions.length !== TOTAL_QUESTIONS) throw new Error("Impossible de préparer 30 questions pour ce niveau.");
+  return shuffle(questions);
+}
+
+function formatTime(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function playTone(frequency, duration, type = "sine") {
+  if (!soundEnabled) return;
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+  if (!audioContext) audioContext = new AudioContextClass();
+  if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  oscillator.type = type;
+  oscillator.frequency.value = frequency;
+  gain.gain.setValueAtTime(0.03, audioContext.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + duration);
+}
+
+function updateTimer() {
+  secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+  timer.textContent = formatTime(secondsLeft);
+  timer.classList.toggle("warning", secondsLeft <= 30);
+  if (secondsLeft === 0 && !finished) endQuiz(true);
+}
+
+function startTimer() {
+  clearInterval(timerId);
+  deadline = Date.now() + TEST_DURATION_SECONDS * 1000;
+  updateTimer();
+  timerId = window.setInterval(updateTimer, 250);
+}
+
+function renderQuestion() {
+  const question = sessionQuestions[currentQuestion];
+  const percent = Math.round((currentQuestion / TOTAL_QUESTIONS) * 100);
+  questionCount.textContent = `Question ${currentQuestion + 1} sur ${TOTAL_QUESTIONS}`;
+  progressLabel.textContent = `${percent} %`;
+  progressTrack.setAttribute("aria-valuenow", String(currentQuestion));
+  progressFill.style.width = `${percent}%`;
+  categoryLabel.textContent = question.category;
+  questionTitle.textContent = question.text;
+
+  if (question.visual) {
+    questionVisual.innerHTML = question.visual;
+    questionVisual.hidden = false;
+  } else {
+    questionVisual.replaceChildren();
+    questionVisual.hidden = true;
+  }
+
+  answersElement.replaceChildren();
+  question.options.forEach((option, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "answer";
+    const letter = document.createElement("span");
+    letter.className = "answer-letter";
+    letter.setAttribute("aria-hidden", "true");
+    letter.textContent = String.fromCharCode(65 + index);
+    const label = document.createElement("span");
+    label.textContent = option;
+    button.append(letter, label);
+    button.addEventListener("click", () => chooseAnswer(index));
+    answersElement.append(button);
+  });
+  questionTitle.focus({ preventScroll: true });
+}
+
+function chooseAnswer(answerIndex) {
+  if (locked || finished) return;
+  locked = true;
+  const question = sessionQuestions[currentQuestion];
+  selectedAnswers[currentQuestion] = answerIndex;
+  if (answerIndex === question.answer) {
+    score += 1;
+    playTone(740, 0.12, "triangle");
+  } else {
+    playTone(210, 0.15, "sawtooth");
+  }
+
+  currentQuestion += 1;
+  if (currentQuestion < TOTAL_QUESTIONS) {
+    window.setTimeout(() => {
+      if (finished) return;
+      locked = false;
+      renderQuestion();
+    }, 140);
+  } else {
+    window.setTimeout(() => endQuiz(false), 140);
+  }
+}
+
+function difficultyLabel() {
+  return difficulty === "decouverte" ? "Découverte" : difficulty === "expert" ? "Expert" : "Intermédiaire";
+}
+
+function renderCategoryResults() {
+  categoryResults.replaceChildren();
+  for (const category of CATEGORIES) {
+    const indexedQuestions = sessionQuestions
+      .map((question, index) => ({ question, index }))
+      .filter(({ question }) => question.category === category);
+    const correct = indexedQuestions.filter(({ question, index }) => selectedAnswers[index] === question.answer).length;
+    const row = document.createElement("div");
+    row.className = "category-row";
+    const label = document.createElement("span");
+    label.textContent = category;
+    const value = document.createElement("strong");
+    value.textContent = `${correct} / ${indexedQuestions.length}`;
+    const meter = document.createElement("span");
+    meter.className = "category-meter";
+    meter.setAttribute("aria-label", `${category} : ${correct} bonnes réponses sur ${indexedQuestions.length}`);
+    const fill = document.createElement("span");
+    fill.style.width = `${(correct / indexedQuestions.length) * 100}%`;
+    meter.append(fill);
+    row.append(label, value, meter);
+    categoryResults.append(row);
+  }
+}
+
+function renderCorrections() {
+  reviewList.replaceChildren();
+  sessionQuestions.forEach((question, index) => {
+    const selected = selectedAnswers[index];
+    const correct = selected === question.answer;
+    const card = document.createElement("article");
+    card.className = `review-card ${correct ? "is-correct" : "is-wrong"}`;
+    const category = document.createElement("span");
+    category.className = "review-category";
+    category.textContent = question.category;
+    const heading = document.createElement("h3");
+    heading.textContent = `${index + 1}. ${question.text}`;
+    card.append(category, heading);
+    if (question.visual) {
+      const image = document.createElement("div");
+      image.className = "review-visual";
+      image.innerHTML = question.visual;
+      card.append(image);
+    }
+    const response = document.createElement("p");
+    response.textContent = `Votre réponse : ${selected === undefined ? "Sans réponse" : question.options[selected]}${correct ? " — correcte" : ` — bonne réponse : ${question.options[question.answer]}`}`;
+    const explanation = document.createElement("p");
+    explanation.className = "review-explanation";
+    explanation.textContent = question.explanation;
+    card.append(response, explanation);
+    reviewList.append(card);
+  });
+}
+
+function finishMessage(percent) {
+  if (percent >= 85) return "Excellent résultat sur cette partie !";
+  if (percent >= 65) return "Très bon travail : vous avez réussi la plupart des défis.";
+  if (percent >= 40) return "Bien joué. La correction peut vous aider à progresser.";
+  return "Merci d’avoir joué. Consultez les explications et retentez une nouvelle série.";
+}
+
+function endQuiz(timeExpired) {
+  if (finished) return;
+  finished = true;
+  clearInterval(timerId);
+  secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+  timer.textContent = formatTime(secondsLeft);
+  quiz.hidden = true;
+  result.hidden = false;
+
+  const percent = Math.round((score / TOTAL_QUESTIONS) * 100);
+  $("#result-title").textContent = playerName ? `Bravo, ${playerName} !` : "Votre résultat";
+  $("#result-badge").textContent = finishMessage(percent);
+  $("#score-value").textContent = String(score);
+  $("#score-percent").textContent = `${percent} %`;
+  $("#time-left-result").textContent = formatTime(secondsLeft);
+  $("#result-message").textContent = `Niveau ${difficultyLabel()} : ${score} bonne(s) réponse(s) sur ${TOTAL_QUESTIONS}.`;
+  $("#time-message").textContent = timeExpired ? "Temps écoulé : la partie est terminée." : `Temps restant : ${formatTime(secondsLeft)}.`;
+  renderCategoryResults();
+  renderCorrections();
+  review.hidden = true;
+  $("#toggle-review").textContent = "Voir la correction";
+  $("#toggle-review").setAttribute("aria-expanded", "false");
+  saveStatus.textContent = "";
+  resultSaved = false;
+  resultData = {
+    score,
+    total: TOTAL_QUESTIONS,
+    percent,
+    secondsLeft,
+    difficulty: difficultyLabel(),
+    date: new Date().toISOString()
+  };
+  if (soundEnabled) {
+    playTone(660, 0.14, "triangle");
+    window.setTimeout(() => playTone(880, 0.12, "triangle"), 120);
+  }
+}
+
+function startQuiz() {
+  playerName = nameInput.value.trim().replace(/[<>]/g, "").slice(0, 24);
+  difficulty = difficultyInput.value;
+  sessionQuestions = drawQuestions();
+  selectedAnswers = Array(TOTAL_QUESTIONS).fill(undefined);
+  currentQuestion = 0;
+  score = 0;
+  secondsLeft = TEST_DURATION_SECONDS;
+  locked = false;
+  finished = false;
+  resultData = null;
+  intro.hidden = true;
+  result.hidden = true;
+  quiz.hidden = false;
+  progressFill.style.width = "0%";
+  startTimer();
+  renderQuestion();
+}
+
+function categorySummary() {
+  return CATEGORIES.map((category) => {
+    const entries = sessionQuestions.map((question, index) => ({ question, index })).filter(({ question }) => question.category === category);
+    const correct = entries.filter(({ question, index }) => selectedAnswers[index] === question.answer).length;
+    return `${category} ${correct}/${entries.length}`;
+  }).join(" · ");
+}
+
+function shareText() {
+  return `${playerName ? `${playerName} — ` : ""}Mon résultat au quiz ludique TEST-QI : ${resultData.score}/${resultData.total} (${resultData.percent} %), niveau ${resultData.difficulty}. ${categorySummary()}. Ce quiz ne mesure pas le QI.`;
+}
+
+async function shareResult() {
+  if (!resultData) return;
+  const text = shareText();
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "Mon résultat au quiz de logique", text });
+      return;
+    } catch (error) {
+      if (error.name === "AbortError") return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    saveStatus.textContent = "Résultat copié. Vous pouvez le coller dans votre message.";
+  } catch {
+    saveStatus.textContent = text;
+  }
+}
+
+function saveResult() {
+  if (!resultData) return;
+  const text = `${shareText()}\nTemps restant : ${formatTime(resultData.secondsLeft)}\nDate : ${new Date(resultData.date).toLocaleString("fr-FR")}\n\nCe résultat est un score de jeu, pas un score de QI.\n`;
+  if (!resultSaved) {
+    try {
+      const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+      history.unshift({ ...resultData, domains: categorySummary() });
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 20)));
+      resultSaved = true;
+    } catch {
+      // Download remains available if browser storage is disabled.
+    }
+  }
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `resultat-quiz-logique-${new Date(resultData.date).toISOString().slice(0, 10)}.txt`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  saveStatus.textContent = resultSaved
+    ? "Résultat téléchargé et sauvegardé dans l’historique de ce navigateur."
+    : "Résultat téléchargé. La sauvegarde locale n’est pas disponible dans ce navigateur.";
+}
+
+soundToggle.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  soundToggle.textContent = `Son : ${soundEnabled ? "ON" : "OFF"}`;
+  soundToggle.setAttribute("aria-pressed", String(soundEnabled));
+  if (soundEnabled) playTone(520, 0.08);
+});
+$("#start").addEventListener("click", startQuiz);
+$("#share-result").addEventListener("click", shareResult);
+$("#save-result").addEventListener("click", saveResult);
+$("#toggle-review").addEventListener("click", (event) => {
+  review.hidden = !review.hidden;
+  event.currentTarget.setAttribute("aria-expanded", String(!review.hidden));
+  event.currentTarget.textContent = review.hidden ? "Voir la correction" : "Masquer la correction";
+  if (!review.hidden) review.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+$("#restart").addEventListener("click", () => {
+  clearInterval(timerId);
+  result.hidden = true;
+  intro.hidden = false;
+  timer.textContent = formatTime(TEST_DURATION_SECONDS);
+  timer.classList.remove("warning");
+});
+
+updateTimer();
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+}
