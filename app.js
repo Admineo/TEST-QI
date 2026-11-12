@@ -1,376 +1,302 @@
-const TOTAL_QUESTIONS = 30;
-const QUESTIONS_PER_CATEGORY = 10;
-const TEST_DURATION_SECONDS = 30 * 60;
-const HISTORY_KEY = "test-qi-history-v2";
-const CATEGORIES = window.TEST_QUESTION_CATEGORIES;
-const QUESTION_BANK = window.TEST_QUESTION_BANK;
+const TOTAL = 30;
+const PER_CATEGORY = 10;
+const DURATION = 30 * 60;
+const CATEGORIES = ["Logique", "Calcul mental", "Observation visuelle"];
+const LEVELS = ["decouverte", "intermediaire", "expert"];
+const HISTORY_KEY = "test-qi-mobile-results-v1";
+
 const $ = (selector) => document.querySelector(selector);
-
-if (!Array.isArray(QUESTION_BANK) || QUESTION_BANK.length !== 150) {
-  throw new Error("La réserve du quiz doit contenir exactement 150 questions.");
-}
-for (const category of CATEGORIES) {
-  for (const difficulty of ["decouverte", "intermediaire", "expert"]) {
-    const count = QUESTION_BANK.filter((question) => question.category === category && question.difficulty === difficulty).length;
-    if (count < QUESTIONS_PER_CATEGORY) throw new Error(`Réserve insuffisante : ${category}, niveau ${difficulty}.`);
-  }
-}
-
 const intro = $("#intro");
 const quiz = $("#quiz");
 const result = $("#result");
 const timer = $("#timer");
-const nameInput = $("#player-name");
-const difficultyInput = $("#difficulty");
-const soundToggle = $("#sound-toggle");
-const questionCount = $("#question-count");
-const progressLabel = $("#progress-label");
-const progressTrack = $("#progress-track");
-const progressFill = $("#progress-fill");
-const categoryLabel = $("#category-label");
 const questionTitle = $("#question-title");
 const questionVisual = $("#question-visual");
 const answersElement = $("#answers");
-const categoryResults = $("#category-results");
-const review = $("#review");
-const reviewList = $("#review-list");
+const progressTrack = $("#progress-track");
+const progressFill = $("#progress-fill");
 const saveStatus = $("#save-status");
 
-let sessionQuestions = [];
-let selectedAnswers = [];
-let currentQuestion = 0;
+let bank = [];
+let session = [];
+let responses = [];
+let index = 0;
 let score = 0;
-let secondsLeft = TEST_DURATION_SECONDS;
 let deadline = 0;
-let timerId = null;
+let tick = null;
+let ended = false;
 let locked = false;
-let finished = false;
 let soundEnabled = false;
 let audioContext = null;
-let resultData = null;
 let playerName = "";
-let difficulty = "intermediaire";
-let resultSaved = false;
+let level = "intermediaire";
+let completedResult = null;
 
 function shuffle(items) {
-  const shuffled = [...items];
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  const output = [...items];
+  for (let i = output.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [output[i], output[j]] = [output[j], output[i]];
   }
-  return shuffled;
+  return output;
 }
 
-function drawQuestions() {
-  const questions = CATEGORIES.flatMap((category) => {
-    const available = QUESTION_BANK.filter((question) => question.category === category && question.difficulty === difficulty);
-    return shuffle(available).slice(0, QUESTIONS_PER_CATEGORY);
-  });
-  if (questions.length !== TOTAL_QUESTIONS) throw new Error("Impossible de préparer 30 questions pour ce niveau.");
-  return shuffle(questions);
+function choices(category, difficulty, text, correct, distractors, explanation, visual = "") {
+  const unique = [...new Set(distractors.map(String).filter((value) => value !== String(correct)))];
+  for (let n = 1; unique.length < 3; n += 1) {
+    const fallback = String(Number(correct) + n + 3);
+    if (fallback !== String(correct) && !unique.includes(fallback)) unique.push(fallback);
+  }
+  const options = shuffle([{ value: String(correct), correct: true }, ...unique.slice(0, 3).map((value) => ({ value, correct: false }))]);
+  return { category, difficulty, text, options: options.map((item) => item.value), answer: options.findIndex((item) => item.correct), explanation, visual };
 }
 
-function formatTime(totalSeconds) {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+function numberChoices(answer) {
+  const candidates = [answer + 1, answer - 1, answer + 2, answer - 2, answer + 5, answer - 5, answer * 2, Math.floor(answer / 2), answer + 10, answer - 10];
+  return [...new Set(candidates.filter((value) => Number.isFinite(value) && value >= 0 && value !== answer))].slice(0, 3);
 }
 
-function playTone(frequency, duration, type = "sine") {
+function makeMathQuestion(level, i) {
+  const shift = LEVELS.indexOf(level) * 5;
+  const mode = i % 6;
+  if (mode === 0) {
+    const a = 18 + i * 3 + shift * 2; const b = 13 + (i * 7) % 39 + shift;
+    const answer = a + b;
+    return choices("Calcul mental", level, `Calculez ${a} + ${b}.`, answer, numberChoices(answer), `${a} + ${b} = ${answer}.`);
+  }
+  if (mode === 1) {
+    const a = 90 + i * 4 + shift * 3; const b = 17 + (i * 5) % 47 + shift;
+    const answer = a - b;
+    return choices("Calcul mental", level, `Calculez ${a} − ${b}.`, answer, numberChoices(answer), `${a} − ${b} = ${answer}.`);
+  }
+  if (mode === 2) {
+    const a = 6 + (i % 13) + shift; const b = 4 + ((i * 3) % 9);
+    const answer = a * b;
+    return choices("Calcul mental", level, `Combien font ${a} × ${b} ?`, answer, numberChoices(answer), `${a} × ${b} = ${answer}.`);
+  }
+  if (mode === 3) {
+    const divisor = 3 + (i % 10); const answer = 12 + i + shift;
+    return choices("Calcul mental", level, `Calculez ${divisor * answer} ÷ ${divisor}.`, answer, numberChoices(answer), `${divisor * answer} ÷ ${divisor} = ${answer}.`);
+  }
+  if (mode === 4) {
+    const percent = [10, 20, 25, 50][i % 4]; const base = (80 + i * 8 + shift * 4);
+    const answer = base * percent / 100;
+    return choices("Calcul mental", level, `Combien font ${percent} % de ${base} ?`, answer, numberChoices(answer), `${base} × ${percent} ÷ 100 = ${answer}.`);
+  }
+  const divisor = 2 + i % 5; const answer = 9 + i + shift; const total = divisor * answer;
+  return choices("Calcul mental", level, `Quelle est la ${divisor === 2 ? "moitié" : divisor === 4 ? "quart" : `${divisor}e partie`} de ${total} ?`, answer, numberChoices(answer), `${total} ÷ ${divisor} = ${answer}.`);
+}
+
+function makeLogicQuestion(level, i) {
+  const shift = LEVELS.indexOf(level) * 4;
+  const mode = i % 4;
+  if (mode === 0) {
+    const start = 3 + i + shift; const step = 2 + (i % 8) + shift;
+    const sequence = [0, 1, 2, 3].map((n) => start + n * step); const answer = start + 4 * step;
+    return choices("Logique", level, `Quel nombre suit : ${sequence.join(", ")}, … ?`, answer, numberChoices(answer), `On ajoute ${step} à chaque terme : ${sequence[3]} + ${step} = ${answer}.`);
+  }
+  if (mode === 1) {
+    const start = 2 + (i % 9) + shift; const sequence = [start, start * 2, start * 4, start * 8]; const answer = start * 16;
+    return choices("Logique", level, `Complétez la suite : ${sequence.join(", ")}, …`, answer, numberChoices(answer), `Chaque terme est multiplié par 2 ; ${sequence[3]} × 2 = ${answer}.`);
+  }
+  if (mode === 2) {
+    const start = 2 + i + shift; const sequence = [start ** 2, (start + 1) ** 2, (start + 2) ** 2]; const answer = (start + 3) ** 2;
+    return choices("Logique", level, `Quel carré parfait suit ${sequence.join(", ")} ?`, answer, numberChoices(answer), `Les nombres sont des carrés consécutifs ; ${start + 3}² = ${answer}.`);
+  }
+  const names = ["Nors", "Vels", "Tims", "Lumas", "Pavos", "Rilons", "Dovés", "Mérals", "Sélans", "Kavans"];
+  const a = names[i % names.length]; const b = names[(i + 3) % names.length]; const c = names[(i + 6) % names.length];
+  return choices("Logique", level, `Tous les ${a} sont des ${b}. Tous les ${b} sont des ${c}. Quelle conclusion suit ?`, `Tous les ${a} sont des ${c}`, [`Tous les ${c} sont des ${a}`, `Aucun ${a} n’est un ${c}`, `Tous les ${b} sont des ${a}`], `La relation est transitive : tous les ${a} sont des ${b}, et tous les ${b} des ${c}.`);
+}
+
+function visualQuestion(level, i) {
+  const shapes = ["carré", "cercle", "triangle", "losange"];
+  const labels = ["Carré", "Cercle", "Triangle", "Losange"];
+  const first = i % 4; const second = (first + 1 + (i % 3)) % 4;
+  const draw = [
+    (x, color) => `<rect x="${x - 15}" y="28" width="30" height="30" rx="4" fill="${color}"/>`,
+    (x, color) => `<circle cx="${x}" cy="43" r="16" fill="${color}"/>`,
+    (x, color) => `<path d="M${x} 23 L${x + 17} 57 H${x - 17} Z" fill="${color}"/>`,
+    (x, color) => `<path d="M${x} 22 L${x + 18} 43 L${x} 64 L${x - 18} 43 Z" fill="${color}"/>`
+  ];
+  const series = [first, second, first, second];
+  const svg = `<svg viewBox="0 0 360 86" role="img" aria-label="Suite alternée de formes">${series.map((shape, position) => draw[shape](35 + position * 82, position % 2 ? "#c084fc" : "#38bdf8")).join("")}</svg>`;
+  return choices("Observation visuelle", level, "Quelle forme complète cette alternance ?", labels[first], labels.filter((_, n) => n !== first), `Les deux formes alternent : la suivante reprend la première (${shapes[first]}).`, svg);
+}
+
+function buildBank() {
+  const result = [];
+  const levelCounts = { decouverte: 17, intermediaire: 17, expert: 16 };
+  for (const level of LEVELS) {
+    for (let i = 0; i < levelCounts[level]; i += 1) {
+      result.push(makeMathQuestion(level, i));
+      result.push(makeLogicQuestion(level, i));
+      result.push(visualQuestion(level, i));
+    }
+  }
+  return result;
+}
+
+bank = buildBank();
+if (bank.length !== 150) throw new Error(`Erreur de banque : ${bank.length} questions au lieu de 150.`);
+
+function drawSession() {
+  const drawn = CATEGORIES.flatMap((category) => shuffle(bank.filter((question) => question.category === category && question.difficulty === level)).slice(0, PER_CATEGORY));
+  if (drawn.length !== TOTAL) throw new Error("Impossible de sélectionner 30 questions pour ce niveau.");
+  return shuffle(drawn);
+}
+
+function formatTime(seconds) {
+  return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function sound(frequency, duration, type = "sine") {
   if (!soundEnabled) return;
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return;
   if (!audioContext) audioContext = new AudioContextClass();
   if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
-  const oscillator = audioContext.createOscillator();
-  const gain = audioContext.createGain();
-  oscillator.type = type;
-  oscillator.frequency.value = frequency;
-  gain.gain.setValueAtTime(0.03, audioContext.currentTime);
+  const oscillator = audioContext.createOscillator(); const gain = audioContext.createGain();
+  oscillator.type = type; oscillator.frequency.value = frequency;
+  gain.gain.setValueAtTime(0.025, audioContext.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
-  oscillator.connect(gain);
-  gain.connect(audioContext.destination);
-  oscillator.start();
-  oscillator.stop(audioContext.currentTime + duration);
+  oscillator.connect(gain); gain.connect(audioContext.destination); oscillator.start(); oscillator.stop(audioContext.currentTime + duration);
 }
 
-function updateTimer() {
-  secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-  timer.textContent = formatTime(secondsLeft);
-  timer.classList.toggle("warning", secondsLeft <= 30);
-  if (secondsLeft === 0 && !finished) endQuiz(true);
+function tickTimer() {
+  const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+  timer.textContent = formatTime(remaining);
+  timer.classList.toggle("warning", remaining <= 30);
+  if (remaining === 0 && !ended) finish(true);
 }
 
-function startTimer() {
-  clearInterval(timerId);
-  deadline = Date.now() + TEST_DURATION_SECONDS * 1000;
-  updateTimer();
-  timerId = window.setInterval(updateTimer, 250);
-}
-
-function renderQuestion() {
-  const question = sessionQuestions[currentQuestion];
-  const percent = Math.round((currentQuestion / TOTAL_QUESTIONS) * 100);
-  questionCount.textContent = `Question ${currentQuestion + 1} sur ${TOTAL_QUESTIONS}`;
-  progressLabel.textContent = `${percent} %`;
-  progressTrack.setAttribute("aria-valuenow", String(currentQuestion));
-  progressFill.style.width = `${percent}%`;
-  categoryLabel.textContent = question.category;
-  questionTitle.textContent = question.text;
-
-  if (question.visual) {
-    questionVisual.innerHTML = question.visual;
-    questionVisual.hidden = false;
-  } else {
-    questionVisual.replaceChildren();
-    questionVisual.hidden = true;
-  }
-
+function showQuestion() {
+  const question = session[index];
+  const progress = Math.round(index / TOTAL * 100);
+  $("#question-count").textContent = `Question ${index + 1} sur ${TOTAL}`;
+  $("#progress-label").textContent = `${progress} %`;
+  progressTrack.setAttribute("aria-valuenow", String(index)); progressFill.style.width = `${progress}%`;
+  $("#category-label").textContent = question.category; questionTitle.textContent = question.text;
+  if (question.visual) { questionVisual.innerHTML = question.visual; questionVisual.hidden = false; }
+  else { questionVisual.replaceChildren(); questionVisual.hidden = true; }
   answersElement.replaceChildren();
-  question.options.forEach((option, index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "answer";
-    const letter = document.createElement("span");
-    letter.className = "answer-letter";
-    letter.setAttribute("aria-hidden", "true");
-    letter.textContent = String.fromCharCode(65 + index);
-    const label = document.createElement("span");
-    label.textContent = option;
-    button.append(letter, label);
-    button.addEventListener("click", () => chooseAnswer(index));
-    answersElement.append(button);
+  question.options.forEach((option, optionIndex) => {
+    const button = document.createElement("button"); button.type = "button"; button.className = "answer";
+    const badge = document.createElement("span"); badge.className = "answer-letter"; badge.setAttribute("aria-hidden", "true"); badge.textContent = String.fromCharCode(65 + optionIndex);
+    const text = document.createElement("span"); text.textContent = option;
+    button.append(badge, text); button.addEventListener("click", () => answer(optionIndex)); answersElement.append(button);
   });
   questionTitle.focus({ preventScroll: true });
 }
 
-function chooseAnswer(answerIndex) {
-  if (locked || finished) return;
-  locked = true;
-  const question = sessionQuestions[currentQuestion];
-  selectedAnswers[currentQuestion] = answerIndex;
-  if (answerIndex === question.answer) {
-    score += 1;
-    playTone(740, 0.12, "triangle");
-  } else {
-    playTone(210, 0.15, "sawtooth");
-  }
-
-  currentQuestion += 1;
-  if (currentQuestion < TOTAL_QUESTIONS) {
-    window.setTimeout(() => {
-      if (finished) return;
-      locked = false;
-      renderQuestion();
-    }, 140);
-  } else {
-    window.setTimeout(() => endQuiz(false), 140);
-  }
+function answer(optionIndex) {
+  if (locked || ended) return;
+  locked = true; responses[index] = optionIndex;
+  if (optionIndex === session[index].answer) { score += 1; sound(740, 0.1, "triangle"); } else sound(210, 0.12, "sine");
+  index += 1;
+  if (index >= TOTAL) window.setTimeout(() => finish(false), 120);
+  else window.setTimeout(() => { if (!ended) { locked = false; showQuestion(); } }, 120);
 }
 
-function difficultyLabel() {
-  return difficulty === "decouverte" ? "Découverte" : difficulty === "expert" ? "Expert" : "Intermédiaire";
-}
-
-function renderCategoryResults() {
-  categoryResults.replaceChildren();
+function renderBreakdown() {
+  const container = $("#category-results"); container.replaceChildren();
   for (const category of CATEGORIES) {
-    const indexedQuestions = sessionQuestions
-      .map((question, index) => ({ question, index }))
-      .filter(({ question }) => question.category === category);
-    const correct = indexedQuestions.filter(({ question, index }) => selectedAnswers[index] === question.answer).length;
-    const row = document.createElement("div");
-    row.className = "category-row";
-    const label = document.createElement("span");
-    label.textContent = category;
-    const value = document.createElement("strong");
-    value.textContent = `${correct} / ${indexedQuestions.length}`;
-    const meter = document.createElement("span");
-    meter.className = "category-meter";
-    meter.setAttribute("aria-label", `${category} : ${correct} bonnes réponses sur ${indexedQuestions.length}`);
-    const fill = document.createElement("span");
-    fill.style.width = `${(correct / indexedQuestions.length) * 100}%`;
-    meter.append(fill);
-    row.append(label, value, meter);
-    categoryResults.append(row);
+    const entries = session.map((question, position) => ({ question, position })).filter((item) => item.question.category === category);
+    const correct = entries.filter(({ question, position }) => responses[position] === question.answer).length;
+    const row = document.createElement("div"); row.className = "breakdown-row";
+    const name = document.createElement("span"); name.textContent = category;
+    const amount = document.createElement("strong"); amount.textContent = `${correct} / ${entries.length}`;
+    const meter = document.createElement("span"); meter.className = "meter";
+    const fill = document.createElement("span"); fill.style.width = `${correct / entries.length * 100}%`; meter.append(fill);
+    row.append(name, amount, meter); container.append(row);
   }
 }
 
-function renderCorrections() {
-  reviewList.replaceChildren();
-  sessionQuestions.forEach((question, index) => {
-    const selected = selectedAnswers[index];
-    const correct = selected === question.answer;
-    const card = document.createElement("article");
-    card.className = `review-card ${correct ? "is-correct" : "is-wrong"}`;
-    const category = document.createElement("span");
-    category.className = "review-category";
-    category.textContent = question.category;
-    const heading = document.createElement("h3");
-    heading.textContent = `${index + 1}. ${question.text}`;
-    card.append(category, heading);
-    if (question.visual) {
-      const image = document.createElement("div");
-      image.className = "review-visual";
-      image.innerHTML = question.visual;
-      card.append(image);
-    }
-    const response = document.createElement("p");
-    response.textContent = `Votre réponse : ${selected === undefined ? "Sans réponse" : question.options[selected]}${correct ? " — correcte" : ` — bonne réponse : ${question.options[question.answer]}`}`;
-    const explanation = document.createElement("p");
-    explanation.className = "review-explanation";
-    explanation.textContent = question.explanation;
-    card.append(response, explanation);
-    reviewList.append(card);
+function renderReview() {
+  const container = $("#review-list"); container.replaceChildren();
+  session.forEach((question, position) => {
+    const chosen = responses[position]; const correct = chosen === question.answer;
+    const card = document.createElement("article"); card.className = `review-card ${correct ? "correct" : "incorrect"}`;
+    const category = document.createElement("span"); category.className = "review-category"; category.textContent = question.category;
+    const heading = document.createElement("h3"); heading.textContent = `${position + 1}. ${question.text}`; card.append(category, heading);
+    if (question.visual) { const image = document.createElement("div"); image.className = "visual review-visual"; image.innerHTML = question.visual; card.append(image); }
+    const chosenText = document.createElement("p"); chosenText.textContent = `Votre réponse : ${chosen === undefined ? "Sans réponse" : question.options[chosen]}${correct ? " · Correcte" : ` · Réponse attendue : ${question.options[question.answer]}`}`;
+    const explanation = document.createElement("p"); explanation.className = "explanation"; explanation.textContent = question.explanation;
+    card.append(chosenText, explanation); container.append(card);
   });
 }
 
-function finishMessage(percent) {
-  if (percent >= 85) return "Excellent résultat sur cette partie !";
-  if (percent >= 65) return "Très bon travail : vous avez réussi la plupart des défis.";
-  if (percent >= 40) return "Bien joué. La correction peut vous aider à progresser.";
-  return "Merci d’avoir joué. Consultez les explications et retentez une nouvelle série.";
-}
-
-function endQuiz(timeExpired) {
-  if (finished) return;
-  finished = true;
-  clearInterval(timerId);
-  secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-  timer.textContent = formatTime(secondsLeft);
-  quiz.hidden = true;
-  result.hidden = false;
-
-  const percent = Math.round((score / TOTAL_QUESTIONS) * 100);
+function finish(timeExpired) {
+  if (ended) return;
+  ended = true; clearInterval(tick); tickTimer();
+  quiz.hidden = true; result.hidden = false;
+  const percent = Math.round(score / TOTAL * 100);
   $("#result-title").textContent = playerName ? `Bravo, ${playerName} !` : "Votre résultat";
-  $("#result-badge").textContent = finishMessage(percent);
-  $("#score-value").textContent = String(score);
-  $("#score-percent").textContent = `${percent} %`;
-  $("#time-left-result").textContent = formatTime(secondsLeft);
-  $("#result-message").textContent = `Niveau ${difficultyLabel()} : ${score} bonne(s) réponse(s) sur ${TOTAL_QUESTIONS}.`;
-  $("#time-message").textContent = timeExpired ? "Temps écoulé : la partie est terminée." : `Temps restant : ${formatTime(secondsLeft)}.`;
-  renderCategoryResults();
-  renderCorrections();
-  review.hidden = true;
-  $("#toggle-review").textContent = "Voir la correction";
-  $("#toggle-review").setAttribute("aria-expanded", "false");
+  $("#result-label").textContent = percent >= 80 ? "Très belle partie" : percent >= 60 ? "Bonne partie" : percent >= 40 ? "Partie encourageante" : "Merci d’avoir joué";
+  $("#score-value").textContent = String(score); $("#score-percent").textContent = `${percent} % de bonnes réponses`;
+  $("#result-message").textContent = `Difficulté ${level === "decouverte" ? "Découverte" : level === "expert" ? "Expert" : "Intermédiaire"} · ${score} bonne(s) réponse(s) sur ${TOTAL}.`;
+  $("#time-message").textContent = timeExpired ? "Le temps est écoulé." : `Temps restant : ${formatTime(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)))}.`;
+  renderBreakdown(); renderReview(); $("#review").hidden = true;
+  $("#toggle-review").textContent = "Voir la correction"; $("#toggle-review").setAttribute("aria-expanded", "false");
   saveStatus.textContent = "";
-  resultSaved = false;
-  resultData = {
-    score,
-    total: TOTAL_QUESTIONS,
-    percent,
-    secondsLeft,
-    difficulty: difficultyLabel(),
-    date: new Date().toISOString()
-  };
-  if (soundEnabled) {
-    playTone(660, 0.14, "triangle");
-    window.setTimeout(() => playTone(880, 0.12, "triangle"), 120);
-  }
+  completedResult = { score, percent, difficulty, date: new Date().toISOString(), timeExpired };
+  if (soundEnabled) { sound(660, 0.12, "triangle"); window.setTimeout(() => sound(880, 0.12, "triangle"), 120); }
 }
 
-function startQuiz() {
-  playerName = nameInput.value.trim().replace(/[<>]/g, "").slice(0, 24);
-  difficulty = difficultyInput.value;
-  sessionQuestions = drawQuestions();
-  selectedAnswers = Array(TOTAL_QUESTIONS).fill(undefined);
-  currentQuestion = 0;
-  score = 0;
-  secondsLeft = TEST_DURATION_SECONDS;
-  locked = false;
-  finished = false;
-  resultData = null;
-  intro.hidden = true;
-  result.hidden = true;
-  quiz.hidden = false;
-  progressFill.style.width = "0%";
-  startTimer();
-  renderQuestion();
-}
-
-function categorySummary() {
-  return CATEGORIES.map((category) => {
-    const entries = sessionQuestions.map((question, index) => ({ question, index })).filter(({ question }) => question.category === category);
-    const correct = entries.filter(({ question, index }) => selectedAnswers[index] === question.answer).length;
-    return `${category} ${correct}/${entries.length}`;
-  }).join(" · ");
+function start() {
+  playerName = $("#player-name").value.trim().replace(/[<>]/g, "").slice(0, 24);
+  level = LEVELS.includes($("#difficulty").value) ? $("#difficulty").value : "intermediaire";
+  session = drawSession(); responses = Array(TOTAL).fill(undefined); index = 0; score = 0; ended = false; locked = false; completedResult = null;
+  intro.hidden = true; result.hidden = true; quiz.hidden = false;
+  deadline = Date.now() + DURATION * 1000; tickTimer(); clearInterval(tick); tick = window.setInterval(tickTimer, 500);
+  showQuestion();
 }
 
 function shareText() {
-  return `${playerName ? `${playerName} — ` : ""}Mon résultat au quiz ludique TEST-QI : ${resultData.score}/${resultData.total} (${resultData.percent} %), niveau ${resultData.difficulty}. ${categorySummary()}. Ce quiz ne mesure pas le QI.`;
+  const domains = CATEGORIES.map((category) => {
+    const rows = session.map((question, position) => ({ question, position })).filter((item) => item.question.category === category);
+    const correct = rows.filter(({ question, position }) => responses[position] === question.answer).length;
+    return `${category} ${correct}/${rows.length}`;
+  }).join(" · ");
+  return `${playerName ? `${playerName} — ` : ""}Mon résultat au quiz TEST-QI : ${score}/30 (${Math.round(score / TOTAL * 100)} %). ${domains}. Quiz récréatif, ce n’est pas un score de QI.`;
 }
 
-async function shareResult() {
-  if (!resultData) return;
+async function share() {
+  if (!completedResult) return;
   const text = shareText();
   if (navigator.share) {
-    try {
-      await navigator.share({ title: "Mon résultat au quiz de logique", text });
-      return;
-    } catch (error) {
-      if (error.name === "AbortError") return;
-    }
+    try { await navigator.share({ title: "Mon résultat au quiz", text }); return; }
+    catch (error) { if (error.name === "AbortError") return; }
   }
+  try { await navigator.clipboard.writeText(text); saveStatus.textContent = "Résultat copié pour le partager."; }
+  catch { saveStatus.textContent = text; }
+}
+
+function save() {
+  if (!completedResult) return;
+  const report = `${shareText()}\nDate : ${new Date(completedResult.date).toLocaleString("fr-FR")}\nTemps restant : ${timer.textContent}\n\nCe quiz est récréatif et ne mesure pas le QI.\n`;
+  let locallySaved = false;
   try {
-    await navigator.clipboard.writeText(text);
-    saveStatus.textContent = "Résultat copié. Vous pouvez le coller dans votre message.";
-  } catch {
-    saveStatus.textContent = text;
-  }
+    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+    history.unshift({ ...completedResult, name: playerName || undefined });
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 20))); locallySaved = true;
+  } catch { /* The downloadable report is still available. */ }
+  const blob = new Blob([report], { type: "text/plain;charset=utf-8" }); const url = URL.createObjectURL(blob);
+  const link = document.createElement("a"); link.href = url; link.download = `resultat-quiz-${new Date().toISOString().slice(0, 10)}.txt`;
+  document.body.append(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  saveStatus.textContent = locallySaved ? "Fichier téléchargé et résultat conservé dans ce navigateur." : "Fichier téléchargé. La sauvegarde du navigateur n’est pas disponible.";
 }
 
-function saveResult() {
-  if (!resultData) return;
-  const text = `${shareText()}\nTemps restant : ${formatTime(resultData.secondsLeft)}\nDate : ${new Date(resultData.date).toLocaleString("fr-FR")}\n\nCe résultat est un score de jeu, pas un score de QI.\n`;
-  if (!resultSaved) {
-    try {
-      const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-      history.unshift({ ...resultData, domains: categorySummary() });
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 20)));
-      resultSaved = true;
-    } catch {
-      // Download remains available if browser storage is disabled.
-    }
-  }
-  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `resultat-quiz-logique-${new Date(resultData.date).toISOString().slice(0, 10)}.txt`;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  saveStatus.textContent = resultSaved
-    ? "Résultat téléchargé et sauvegardé dans l’historique de ce navigateur."
-    : "Résultat téléchargé. La sauvegarde locale n’est pas disponible dans ce navigateur.";
-}
-
-soundToggle.addEventListener("click", () => {
-  soundEnabled = !soundEnabled;
-  soundToggle.textContent = `Son : ${soundEnabled ? "ON" : "OFF"}`;
-  soundToggle.setAttribute("aria-pressed", String(soundEnabled));
-  if (soundEnabled) playTone(520, 0.08);
-});
-$("#start").addEventListener("click", startQuiz);
-$("#share-result").addEventListener("click", shareResult);
-$("#save-result").addEventListener("click", saveResult);
+$("#start").addEventListener("click", start);
+$("#restart").addEventListener("click", () => { clearInterval(tick); result.hidden = true; intro.hidden = false; timer.textContent = "30:00"; timer.classList.remove("warning"); });
+$("#share-result").addEventListener("click", share);
+$("#save-result").addEventListener("click", save);
 $("#toggle-review").addEventListener("click", (event) => {
-  review.hidden = !review.hidden;
-  event.currentTarget.setAttribute("aria-expanded", String(!review.hidden));
-  event.currentTarget.textContent = review.hidden ? "Voir la correction" : "Masquer la correction";
-  if (!review.hidden) review.scrollIntoView({ behavior: "smooth", block: "start" });
+  const open = $("#review").hidden; $("#review").hidden = !open;
+  event.currentTarget.setAttribute("aria-expanded", String(open)); event.currentTarget.textContent = open ? "Masquer la correction" : "Voir la correction";
+  if (open) $("#review").scrollIntoView({ behavior: "smooth", block: "start" });
 });
-$("#restart").addEventListener("click", () => {
-  clearInterval(timerId);
-  result.hidden = true;
-  intro.hidden = false;
-  timer.textContent = formatTime(TEST_DURATION_SECONDS);
-  timer.classList.remove("warning");
-});
+soundToggle.addEventListener("click", () => { soundEnabled = !soundEnabled; soundToggle.textContent = `Son : ${soundEnabled ? "ON" : "OFF"}`; soundToggle.setAttribute("aria-pressed", String(soundEnabled)); if (soundEnabled) sound(520, 0.07); });
 
-updateTimer();
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
 }

@@ -1,7 +1,7 @@
 {
-  "name": "TEST-QI — Défi logique mobile",
+  "name": "TEST-QI — Quiz mobile",
   "short_name": "TEST-QI",
-  "description": "Quiz récréatif de logique pour smartphone.",
+  "description": "Quiz récréatif mobile de logique, calcul mental et observation.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",

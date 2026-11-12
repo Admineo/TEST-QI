@@ -4,62 +4,82 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0756a5">
-  <meta name="description" content="Quiz de logique pour smartphone : 30 questions en 30 minutes.">
-  <title>TEST-QI — Défi logique mobile</title>
+  <meta name="description" content="Quiz mobile de logique, calcul mental et observation, avec 30 questions tirées au hasard.">
+  <title>TEST-QI · Défi logique mobile</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="mobile-blue.css">
 </head>
 <body>
-  <div class="bg-glow bg-glow-one" aria-hidden="true"></div><div class="bg-glow bg-glow-two" aria-hidden="true"></div>
-  <main class="app" id="app">
+  <main class="app">
     <header class="topbar">
-      <a class="brand" href="./" aria-label="Accueil du quiz">TEST<span>·</span>QI</a>
-      <div class="topbar-actions"><button id="sound-toggle" class="mini-button" type="button" aria-pressed="false">Son : OFF</button><div id="timer" class="timer" aria-label="Temps restant">30:00</div></div>
+      <a class="brand" href="./" aria-label="Accueil TEST-QI">TEST<span>·</span>QI</a>
+      <div class="topbar-actions">
+        <button id="sound-toggle" class="mini-button" type="button" aria-pressed="false">Son : OFF</button>
+        <output id="timer" class="timer" aria-label="Temps restant">30:00</output>
+      </div>
     </header>
-    <section class="panel" aria-labelledby="page-title">
-      <div id="intro" class="intro">
-        <div class="badge-row"><span class="badge">30 questions</span><span class="badge">30 minutes</span><span class="badge">150 questions en réserve</span></div>
-        <p class="eyebrow">Défi logique mobile</p>
-        <h1 id="page-title">Un quiz conçu pour votre smartphone.</h1>
-        <p class="lead">Touchez une réponse pour avancer. Chaque partie propose 30 questions tirées au hasard : logique, calcul mental et observation visuelle.</p>
-        <div class="profile-fields">
-          <label class="field" for="player-name">Prénom ou pseudo <span>Facultatif, sert uniquement à personnaliser le résultat.</span><input id="player-name" type="text" maxlength="24" autocomplete="nickname" placeholder="Ex. Alex"></label>
-          <label class="field" for="age-band">Tranche d’âge <span>Facultative, non enregistrée et sans effet sur la note.</span><select id="age-band"><option value="">Je préfère ne pas répondre</option><option>Moins de 16 ans</option><option>16–17 ans</option><option>18–29 ans</option><option>30–44 ans</option><option>45–59 ans</option><option>60 ans ou plus</option></select></label>
-          <label class="field" for="difficulty">Difficulté du jeu<select id="difficulty"><option value="decouverte">Découverte</option><option value="intermediaire" selected>Intermédiaire</option><option value="expert">Expert</option></select></label>
-        </div>
-        <p class="notice iq-notice"><strong>Important :</strong> ce quiz est un jeu et ne mesure pas le QI. Son score n’est ni un diagnostic ni une comparaison normative. Un véritable bilan nécessite un test psychométrique standardisé, administré et interprété par un professionnel qualifié. Nous ne demandons pas le sexe/genre : il n’est pas utile au quiz.</p>
-        <button class="button primary" id="start" type="button">Commencer <span aria-hidden="true">→</span></button>
-        <aside class="donate-card"><span aria-hidden="true">💙</span><div><strong>Envie de soutenir le projet ?</strong><p>Le don est facultatif et passe par PayPal.</p></div><a class="donate-button" href="https://www.paypal.com/paypalme/emrebayram34" target="_blank" rel="noopener noreferrer">Faire un don</a></aside>
-      </div>
-      <div id="quiz" class="quiz" hidden>
-        <div class="progress-row"><span id="question-count" class="eyebrow"></span><span id="progress-label" class="progress-label"></span></div>
-        <div class="progress-track" id="progress-track" role="progressbar" aria-label="Progression du quiz" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><span id="progress-fill"></span></div>
-        <span id="category-label" class="category-label"></span>
-        <h2 id="question-title" class="question-title" tabindex="-1"></h2>
-        <div id="question-visual" class="question-visual" hidden></div>
+
+    <section class="panel">
+      <section id="intro" class="card intro" aria-labelledby="page-title">
+        <div class="badges"><span>30 questions</span><span>30 minutes</span><span>3 domaines</span></div>
+        <p class="eyebrow">Un défi pour l’esprit</p>
+        <h1 id="page-title">Votre quiz de logique, sur smartphone.</h1>
+        <p class="lead">Une nouvelle série à chaque partie : raisonnement, calcul mental et observation visuelle, avec correction expliquée à la fin.</p>
+
+        <label class="field" for="player-name">Prénom ou pseudo <small>Facultatif, utilisé seulement dans votre résultat.</small>
+          <input id="player-name" type="text" maxlength="24" autocomplete="nickname" placeholder="Ex. Alex">
+        </label>
+        <label class="field" for="age-band">Tranche d’âge <small>Facultative, non utilisée pour noter et non enregistrée.</small>
+          <select id="age-band"><option value="">Je préfère ne pas répondre</option><option>Moins de 16 ans</option><option>16–17 ans</option><option>18–29 ans</option><option>30–44 ans</option><option>45–59 ans</option><option>60 ans ou plus</option></select>
+        </label>
+        <label class="field" for="difficulty">Difficulté du jeu
+          <select id="difficulty"><option value="decouverte">Découverte</option><option value="intermediaire" selected>Intermédiaire</option><option value="expert">Expert</option></select>
+        </label>
+
+        <p class="notice"><strong>Important :</strong> ce quiz est récréatif. Il ne s’agit pas d’un test de QI validé et il ne calcule pas de QI. Un résultat clinique nécessite un instrument standardisé, des normes adaptées et une administration par un professionnel qualifié.</p>
+        <button id="start" class="button primary" type="button">Commencer le quiz <span aria-hidden="true">→</span></button>
+
+        <aside class="donation">
+          <span aria-hidden="true">💙</span><div><strong>Envie de soutenir le projet ?</strong><p>Le don est facultatif et passe par PayPal.</p></div>
+          <a class="button donate" href="https://www.paypal.com/paypalme/emrebayram34" target="_blank" rel="noopener noreferrer">Faire un don</a>
+        </aside>
+      </section>
+
+      <section id="quiz" class="card quiz" aria-labelledby="question-title" hidden>
+        <div class="quiz-meta"><span id="question-count" class="eyebrow"></span><span id="progress-label"></span></div>
+        <div id="progress-track" class="progress-track" role="progressbar" aria-label="Progression du quiz" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><span id="progress-fill"></span></div>
+        <span id="category-label" class="category"></span>
+        <h2 id="question-title" tabindex="-1"></h2>
+        <div id="question-visual" class="visual" hidden></div>
         <div id="answers" class="answers" role="group" aria-labelledby="question-title"></div>
-        <p class="hint">Touchez une réponse pour continuer.</p>
-      </div>
-      <div id="result" class="result" hidden>
-        <p class="eyebrow">Partie terminée</p><h1 id="result-title">Votre résultat</h1>
-        <div id="result-badge" class="result-badge"></div>
-        <p class="score"><span id="score-value">0</span><span class="score-total"> / 30</span></p>
-        <div class="score-grid"><div class="score-box"><span class="box-label">Réussite au quiz</span><strong id="score-percent">0 %</strong></div><div class="score-box"><span class="box-label">Temps restant</span><strong id="time-left-result">00:00</strong></div></div>
+        <p class="hint">Touchez une réponse pour passer à la question suivante.</p>
+      </section>
+
+      <section id="result" class="card result" aria-labelledby="result-title" hidden>
+        <p class="eyebrow">Partie terminée</p>
+        <h1 id="result-title">Votre résultat</h1>
+        <p class="result-label" id="result-label"></p>
+        <p class="score"><strong id="score-value">0</strong><span> / 30</span></p>
+        <p id="score-percent" class="percent"></p>
         <p id="result-message" class="lead"></p>
-        <p class="notice iq-notice"><strong>Ce score est un résultat de jeu, pas un score de QI.</strong> Il ne permet pas de déduire votre QI.</p>
-        <h2 class="category-heading">Résultats par domaine</h2><div id="category-results" class="category-results"></div>
-        <p id="time-message" class="notice compact"></p>
-        <div class="result-actions"><button class="button primary" id="share-result" type="button">Partager le résultat</button><button class="button secondary" id="save-result" type="button">Télécharger / sauvegarder</button><button class="button secondary" id="toggle-review" type="button" aria-expanded="false">Voir la correction</button></div>
-        <p id="save-status" class="save-status" role="status"></p>
-        <section id="review" class="review" hidden aria-label="Correction des questions"><h2 class="category-heading">Correction et explications</h2><div id="review-list" class="review-list"></div></section>
-        <aside class="donate-card"><span aria-hidden="true">💙</span><div><strong>Merci pour votre soutien</strong><p>Don facultatif via PayPal.</p></div><a class="donate-button" href="https://www.paypal.com/paypalme/emrebayram34" target="_blank" rel="noopener noreferrer">Faire un don</a></aside>
-        <button class="button quiet" id="restart" type="button">Rejouer avec d’autres questions</button>
-      </div>
+        <p class="notice"><strong>Ce score mesure uniquement vos réponses à ce quiz.</strong> Ce n’est ni un score de QI, ni un diagnostic, ni une comparaison normative.</p>
+        <h2 class="section-title">Résultats par domaine</h2>
+        <div id="category-results" class="category-results"></div>
+        <p id="time-message" class="time-message"></p>
+        <div class="result-actions">
+          <button id="share-result" class="button primary" type="button">Partager le résultat</button>
+          <button id="save-result" class="button secondary" type="button">Télécharger / sauvegarder</button>
+          <button id="toggle-review" class="button secondary" type="button" aria-expanded="false">Voir la correction</button>
+        </div>
+        <p id="save-status" class="status" role="status"></p>
+        <section id="review" class="review" hidden><h2 class="section-title">Correction détaillée</h2><div id="review-list"></div></section>
+        <aside class="donation result-donation"><span aria-hidden="true">💙</span><div><strong>Soutenir le quiz</strong><p>Don PayPal facultatif.</p></div><a class="button donate" href="https://www.paypal.com/paypalme/emrebayram34" target="_blank" rel="noopener noreferrer">Faire un don</a></aside>
+        <button id="restart" class="button restart" type="button">Nouvelle partie · nouvelles questions</button>
+      </section>
     </section>
-    <footer>Quiz récréatif mobile · aucun score de QI n’est calculé.</footer>
+    <footer>TEST-QI · Quiz mobile de divertissement · Aucun score de QI n’est calculé.</footer>
   </main>
-  <script src="question-bank.js" defer></script><script src="app.js" defer></script>
+  <script src="app.js" defer></script>
 </body>
 </html>
