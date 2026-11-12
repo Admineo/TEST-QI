@@ -3,76 +3,61 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0a1020">
-  <meta name="description" content="Quiz ludique de logique, 30 questions en 30 minutes, optimisé pour Android.">
-  <title>TEST-QI Premium</title>
+  <meta name="theme-color" content="#fff7ed">
+  <meta name="description" content="Quiz ludique de raisonnement, calcul mental et observation visuelle, optimisé pour Android.">
+  <title>Défi logique</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="theme.css">
 </head>
 <body>
-  <div class="bg-glow bg-glow-one"></div>
-  <div class="bg-glow bg-glow-two"></div>
-
+  <div class="bg-glow bg-glow-one"></div><div class="bg-glow bg-glow-two"></div>
   <main class="app" id="app">
     <header class="topbar">
-      <a class="brand" href="./" aria-label="Accueil du test">TEST<span>·</span>QI</a>
-      <div class="topbar-actions">
-        <button id="sound-toggle" class="mini-button" type="button" aria-pressed="true">Son : ON</button>
-        <div id="timer" class="timer" aria-live="off">30:00</div>
-      </div>
+      <a class="brand" href="./" aria-label="Accueil">TEST<span>·</span>QI</a>
+      <div class="topbar-actions"><button id="sound-toggle" class="mini-button" type="button" aria-pressed="false">Son : OFF</button><div id="timer" class="timer" aria-live="off">30:00</div></div>
     </header>
-
-    <section class="panel" aria-labelledby="page-title">
+    <section class="panel">
       <div id="intro" class="intro">
-        <div class="badge-row"><span class="badge">30 questions</span><span class="badge">30 minutes</span><span class="badge">Android</span></div>
-        <p class="eyebrow">Défi logique</p>
-        <h1 id="page-title">Mettez votre logique à l’épreuve.</h1>
-        <p class="lead">Des énigmes de raisonnement, de calcul mental et d’observation visuelle, avec un résultat partageable et sauvegardable.</p>
-        <ul class="stats" aria-label="Informations du test"><li>Raisonnement</li><li>Calcul mental</li><li>Observation visuelle</li><li>Résultat conservé sur cet appareil</li></ul>
-        <p class="notice">Ce quiz est un jeu de logique : il ne mesure pas le QI et ne constitue pas une évaluation professionnelle.</p>
-        <button class="button primary" id="start" type="button">Commencer <span aria-hidden="true">→</span></button>
+        <div class="badge-row"><span class="badge">30 questions</span><span class="badge">30 minutes</span><span class="badge">3 domaines</span></div>
+        <p class="eyebrow">Un défi pour l’esprit</p>
+        <h1>Un quiz haut en couleur pour exercer votre logique.</h1>
+        <p class="lead">Tentez des questions de raisonnement, de calcul mental et d’observation. Chaque partie choisit 30 questions différentes dans une réserve de 150.</p>
+        <label class="age-field" for="age-band">Votre tranche d’âge <span>(facultatif, pour personnaliser l’affichage uniquement)</span>
+          <select id="age-band"><option value="">Je préfère ne pas répondre</option><option>Moins de 16 ans</option><option>16–17 ans</option><option>18–29 ans</option><option>30–44 ans</option><option>45–59 ans</option><option>60 ans ou plus</option></select>
+        </label>
+        <p class="notice privacy-note">Nous ne demandons pas votre sexe/genre : cette information n’est pas utile ici. L’âge n’est ni enregistré ni utilisé pour calculer le score. <strong>Ce jeu n’est pas un test de QI validé.</strong> Seul un test psychométrique standardisé, administré et interprété par un professionnel, peut fournir une mesure de QI.</p>
+        <button class="button primary" id="start" type="button">Lancer le défi <span aria-hidden="true">→</span></button>
       </div>
-
       <div id="quiz" class="quiz" hidden>
         <div class="progress-row"><span id="question-count" class="eyebrow"></span><span id="progress-label" class="progress-label"></span></div>
-        <div class="progress-track" role="progressbar" aria-label="Progression du test" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0" id="progress-track"><span id="progress-fill"></span></div>
-        <div id="category-label" class="category-label"></div>
+        <div class="progress-track" id="progress-track" role="progressbar" aria-label="Progression" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><span id="progress-fill"></span></div>
+        <span id="category-label" class="category-label"></span>
         <h2 id="question-title" class="question-title" tabindex="-1"></h2>
         <div id="question-visual" class="question-visual" hidden></div>
         <div id="answers" class="answers" role="group" aria-labelledby="question-title"></div>
-        <p class="hint" id="answer-hint">Sélectionnez la meilleure réponse.</p>
+        <p class="hint">Choisissez une réponse pour continuer.</p>
       </div>
-
-      <div id="result" class="result" hidden aria-live="polite">
-        <div id="confetti" class="confetti" aria-hidden="true"></div>
+      <div id="result" class="result" hidden>
         <p class="eyebrow">Votre résultat</p>
-        <h1 id="result-title">Résumé du test</h1>
-        <div class="result-badge" id="result-badge"></div>
+        <h1>Résultat du quiz</h1>
+        <div id="result-badge" class="result-badge"></div>
         <p class="score"><span id="score-value">0</span><span class="score-total"> / 30</span></p>
-        <div class="score-grid">
-          <div class="score-box"><span class="box-label">Réussite</span><strong id="score-percent">0 %</strong></div>
-          <div class="score-box"><span class="box-label">Temps restant</span><strong id="time-left-result">00:00</strong></div>
-        </div>
+        <div class="score-grid"><div class="score-box"><span class="box-label">Bonnes réponses</span><strong id="score-percent">0 %</strong></div><div class="score-box"><span class="box-label">Temps restant</span><strong id="time-left-result">00:00</strong></div></div>
         <p id="result-message" class="lead"></p>
-        <h2 class="category-heading">Détail par domaine</h2>
-        <div id="category-results" class="category-results"></div>
+        <p class="notice iq-notice"><strong>Important :</strong> ce résultat est un score de jeu, pas un score de QI. Il ne permet pas de déduire votre QI ni de vous comparer à une population.</p>
+        <h2 class="category-heading">Résultats par domaine</h2><div id="category-results" class="category-results"></div>
         <p id="time-message" class="notice compact"></p>
-        <div class="result-actions">
-          <button class="button primary" id="share-result" type="button">Partager</button>
-          <button class="button secondary" id="save-result" type="button">Sauvegarder</button>
-          <button class="button secondary" id="toggle-review" type="button" aria-expanded="false">Voir les réponses</button>
-        </div>
+        <div class="result-actions"><button class="button primary" id="share-result" type="button">Partager</button><button class="button secondary" id="save-result" type="button">Télécharger le résultat</button><button class="button secondary" id="toggle-review" type="button" aria-expanded="false">Voir la correction</button></div>
         <p id="save-status" class="save-status" role="status"></p>
-        <section id="review" class="review" hidden aria-label="Correction des réponses">
-          <h2 class="category-heading">Correction et explications</h2>
-          <div id="review-list" class="review-list"></div>
-        </section>
-        <button class="button quiet" id="restart" type="button">Recommencer</button>
+        <section id="review" class="review" hidden aria-label="Correction"><h2 class="category-heading">Correction et explications</h2><div id="review-list" class="review-list"></div></section>
+        <button class="button quiet" id="restart" type="button">Nouvelle partie (autres questions)</button>
       </div>
     </section>
-    <footer>Quiz ludique — aucun score de QI n’est calculé.</footer>
+    <footer>Quiz récréatif — aucune mesure de QI ou diagnostic.</footer>
   </main>
+  <script src="question-bank.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>

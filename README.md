@@ -1,17 +1,15 @@
-# TEST-QI Premium
+# TEST-QI — quiz ludique
 
-Quiz ludique de logique en français, optimisé pour Android et les écrans mobiles.
+Interface claire et colorée, adaptée aux mobiles Android. Chaque partie propose 30 questions tirées aléatoirement sans doublon dans une réserve de 150 questions : 50 de logique, 50 de calcul mental et 50 d’observation visuelle. Une correction avec réponses et explications est accessible après la partie.
 
-## Contenu et fonctionnalités
+## Âge et données personnelles
 
-- Une réserve intégrée de **150 questions** : 50 de logique, 50 de calcul mental et 50 d’observation visuelle.
-- Chaque partie tire **30 questions au hasard, sans répétition dans la partie**, avec 10 questions par domaine. Une nouvelle partie effectue un nouveau tirage.
-- Test chronométré à 30 minutes, résultat sur 30, partage et sauvegarde locale.
-- Bouton **Voir la correction** après le résultat, avec votre réponse, la bonne réponse, les explications et les visuels des questions concernées.
-- Installation web sur Android et mode hors ligne après publication HTTPS.
+La tranche d’âge est facultative, n’est pas utilisée pour calculer le score et n’est pas enregistrée. Le quiz ne demande pas le sexe/genre : cette donnée n’est pas nécessaire à ce jeu et n’est pas utilisée.
 
-## Lancer le test
+## À propos du score
 
-Ouvrez `index.html` dans un navigateur moderne. Pour l’installation Android et le fonctionnement hors ligne, publiez le site en HTTPS, ouvrez-le dans Chrome Android, puis choisissez **Installer l’application** ou **Ajouter à l’écran d’accueil**.
+Le résultat est uniquement le nombre de bonnes réponses sur 30 et un pourcentage de réussite au quiz. Il ne s’agit pas d’un score de QI. Ce contenu n’est pas un instrument psychométrique validé, n’a pas de normes de comparaison par âge et ne permet pas d’estimer un QI. Un véritable bilan nécessite un test standardisé validé pour l’âge, administré et interprété par un professionnel qualifié.
 
-La sauvegarde est stockée sur l’appareil et n’est pas synchronisée entre téléphones. Ce quiz est un jeu de logique et ne mesure pas le QI.
+## Android
+
+Pour l’installation sur l’écran d’accueil et le mode hors ligne, publiez ce site en HTTPS, ouvrez-le dans Chrome Android et sélectionnez « Installer l’application » ou « Ajouter à l’écran d’accueil ».
