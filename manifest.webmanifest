@@ -1,13 +1,13 @@
 {
-  "name": "Test de logique",
-  "short_name": "Test QI",
-  "description": "Quiz de logique mobile avec 30 questions et 30 minutes.",
+  "name": "TEST-QI Premium",
+  "short_name": "TEST-QI",
+  "description": "Quiz de logique premium, 30 questions, 30 minutes, pensé pour Android et les écrans mobiles.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#070d18",
+  "theme_color": "#070d18",
   "icons": [
     {
       "src": "icon.svg",

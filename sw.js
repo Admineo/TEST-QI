@@ -1,4 +1,4 @@
-const CACHE_NAME = "test-logique-v2";
+const CACHE_NAME = "test-qi-premium-v1";
 const APP_FILES = [
   "./",
   "./index.html",

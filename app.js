@@ -38,6 +38,7 @@ const intro = document.querySelector("#intro");
 const quiz = document.querySelector("#quiz");
 const result = document.querySelector("#result");
 const timer = document.querySelector("#timer");
+const soundToggle = document.querySelector("#sound-toggle");
 const count = document.querySelector("#question-count");
 const progressLabel = document.querySelector("#progress-label");
 const progressTrack = document.querySelector("#progress-track");
@@ -48,17 +49,61 @@ const hint = document.querySelector("#answer-hint");
 const scoreValue = document.querySelector("#score-value");
 const resultMessage = document.querySelector("#result-message");
 const timeMessage = document.querySelector("#time-message");
+const timeLeftResult = document.querySelector("#time-left-result");
+const scorePercent = document.querySelector("#score-percent");
+const resultBadge = document.querySelector("#result-badge");
+const confetti = document.querySelector("#confetti");
 
 let current = 0;
 let score = 0;
 let timeLeft = TOTAL_SECONDS;
 let timerId = null;
 let locked = false;
+let soundEnabled = true;
+let audioCtx = null;
 
 function formatTime(value) {
   const minutes = Math.floor(value / 60);
   const seconds = value % 60;
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function ensureAudio() {
+  if (!soundEnabled) return;
+  const AudioCtor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtor) return;
+  if (!audioCtx) audioCtx = new AudioCtor();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+}
+
+function playTone(frequency, duration, type = "sine", volume = 0.05) {
+  if (!soundEnabled || !audioCtx) return;
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  oscillator.type = type;
+  oscillator.frequency.value = frequency;
+
+  gainNode.gain.value = volume;
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  oscillator.start();
+  oscillator.stop(audioCtx.currentTime + duration);
+
+  gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+}
+
+function playSuccessTone() {
+  ensureAudio();
+  playTone(740, 0.12, "triangle", 0.06);
+  setTimeout(() => playTone(920, 0.14, "triangle", 0.06), 80);
+}
+
+function playErrorTone() {
+  ensureAudio();
+  playTone(210, 0.15, "sawtooth", 0.04);
 }
 
 function updateTimer() {
@@ -91,7 +136,7 @@ function showQuestion() {
   progressTrack.setAttribute("aria-valuenow", String(current));
   progressFill.style.width = `${progressPct}%`;
   title.textContent = question.text;
-  hint.textContent = "Sélectionnez une réponse.";
+  hint.textContent = "Sélectionnez la meilleure réponse.";
   answers.replaceChildren();
 
   question.options.forEach((option, index) => {
@@ -112,7 +157,12 @@ function chooseAnswer(index) {
   locked = true;
 
   const isCorrect = index === questions[current].answer;
-  if (isCorrect) score += 1;
+  if (isCorrect) {
+    score += 1;
+    playSuccessTone();
+  } else {
+    playErrorTone();
+  }
 
   current += 1;
   if (current < TOTAL_QUESTIONS) {
@@ -125,23 +175,63 @@ function chooseAnswer(index) {
   }
 }
 
+function createConfettiBurst() {
+  confetti.innerHTML = "";
+  const colors = ["#8b5cf6", "#7dd3fc", "#fbbf24", "#34d399", "#f472b6", "#fca5a5"];
+  for (let i = 0; i < 28; i++) {
+    const piece = document.createElement("span");
+    piece.className = "confetti-piece";
+    piece.style.left = `${Math.random() * 100}%`;
+    piece.style.background = colors[i % colors.length];
+    piece.style.setProperty("--x", `${(Math.random() - 0.5) * 260}px`);
+    piece.style.setProperty("--r", `${(Math.random() - 0.5) * 700}deg`);
+    piece.style.animationDelay = `${Math.random() * 0.2}s`;
+    confetti.appendChild(piece);
+  }
+}
+
+function getGradeLabel(percent) {
+  if (percent >= 80) return "Excellent niveau";
+  if (percent >= 65) return "Très bon niveau";
+  if (percent >= 50) return "Bon niveau";
+  if (percent >= 35) return "Niveau moyen";
+  return "Niveau débutant";
+}
+
 function endTest(timeExpired) {
   clearInterval(timerId);
   quiz.hidden = true;
   result.hidden = false;
+
+  const percent = Math.round((score / TOTAL_QUESTIONS) * 100);
   scoreValue.textContent = String(score);
+  scorePercent.textContent = `${percent}%`;
+  timeLeftResult.textContent = formatTime(timeLeft);
+  resultBadge.textContent = getGradeLabel(percent);
+
+  if (percent >= 80) {
+    resultBadge.style.background = "rgba(52, 211, 153, 0.12)";
+    resultBadge.style.borderColor = "rgba(52, 211, 153, 0.45)";
+    createConfettiBurst();
+  } else if (percent >= 50) {
+    resultBadge.style.background = "rgba(125, 211, 252, 0.09)";
+    resultBadge.style.borderColor = "rgba(125, 211, 252, 0.35)";
+  } else {
+    resultBadge.style.background = "rgba(251, 191, 36, 0.1)";
+    resultBadge.style.borderColor = "rgba(251, 191, 36, 0.4)";
+  }
 
   let message = "";
-  if (score >= 24) {
-    message = "Excellent ! Votre logique est très solide.";
-  } else if (score >= 18) {
-    message = "Très bien ! Vous avez de bonnes capacités de raisonnement.";
-  } else if (score >= 12) {
-    message = "Bon effort ! Vous avez un bon sens de la logique.";
-  } else if (score >= 7) {
-    message = "Pas mal ! Continuez à entraîner votre réflexion.";
+  if (percent >= 80) {
+    message = "Excellent ! Votre logique est très forte et votre niveau est impressionnant.";
+  } else if (percent >= 65) {
+    message = "Très bon résultat. Vous avez de bonnes capacités de raisonnement et une vraie réactivité.";
+  } else if (percent >= 50) {
+    message = "Bonne performance. Votre logique est solide, il reste encore de la marge pour aller plus loin.";
+  } else if (percent >= 35) {
+    message = "Résultat honorable. Continuez à pratiquer, vous progressez déjà dans la bonne direction.";
   } else {
-    message = "Le score est modeste, mais chaque essai permet de progresser.";
+    message = "Chaque essai permet d’améliorer son raisonnement. Ne vous découragez pas, il suffit de continuer.";
   }
 
   resultMessage.textContent = message;
@@ -150,9 +240,15 @@ function endTest(timeExpired) {
   } else {
     timeMessage.textContent = `Temps restant : ${formatTime(timeLeft)}.`;
   }
+
+  if (soundEnabled) {
+    playTone(660, 0.15, "triangle", 0.05);
+    setTimeout(() => playTone(880, 0.12, "triangle", 0.05), 100);
+  }
 }
 
 function startQuiz() {
+  ensureAudio();
   current = 0;
   score = 0;
   timeLeft = TOTAL_SECONDS;
@@ -161,17 +257,25 @@ function startQuiz() {
   intro.hidden = true;
   result.hidden = true;
   quiz.hidden = false;
+  progressFill.style.width = "0%";
   startTimer();
   showQuestion();
 }
 
 function restartQuiz() {
   clearInterval(timerId);
+  confetti.innerHTML = "";
   result.hidden = true;
   intro.hidden = false;
   timer.classList.remove("warning");
   timer.textContent = "30:00";
 }
+
+soundToggle.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  soundToggle.textContent = `Son : ${soundEnabled ? "ON" : "OFF"}`;
+  if (soundEnabled) ensureAudio();
+});
 
 document.querySelector("#start").addEventListener("click", startQuiz);
 document.querySelector("#restart").addEventListener("click", restartQuiz);

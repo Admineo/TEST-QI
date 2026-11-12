@@ -3,32 +3,50 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0f172a">
-  <meta name="description" content="Quiz de logique mobile, 30 questions en 30 minutes.">
-  <title>Test de logique • 30 questions</title>
+  <meta name="theme-color" content="#0a1020">
+  <meta name="description" content="Quiz de logique premium, 30 questions, 30 minutes, optimisé pour Android.">
+  <title>TEST-QI Premium</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="bg-glow bg-glow-one"></div>
+  <div class="bg-glow bg-glow-two"></div>
+
   <main class="app" id="app">
     <header class="topbar">
       <a class="brand" href="./" aria-label="Accueil du test">TEST<span>·</span>QI</a>
-      <div id="timer" class="timer" aria-live="polite">30:00</div>
+      <div class="topbar-actions">
+        <button id="sound-toggle" class="mini-button" type="button" aria-label="Activer ou désactiver le son">Son : ON</button>
+        <div id="timer" class="timer" aria-live="polite">30:00</div>
+      </div>
     </header>
 
     <section class="panel" aria-labelledby="page-title">
       <div id="intro" class="intro">
-        <p class="eyebrow">Défi logique</p>
-        <h1 id="page-title">Test de logique en 30 minutes.</h1>
-        <p class="lead">Répondez à 30 questions de logique à votre rythme. Le minuteur démarre dès le début. Choisissez une réponse pour passer à la suivante.</p>
+        <div class="badge-row">
+          <span class="badge">30 questions</span>
+          <span class="badge">30 minutes</span>
+          <span class="badge">Android</span>
+        </div>
+
+        <p class="eyebrow">Défi logique premium</p>
+        <h1 id="page-title">Test de logique ultra-mobile.</h1>
+        <p class="lead">Un quiz de raisonnement rapide, esthétique et pensé pour les écrans Android. Une expérience immersive, fluide et agréable à jouer.</p>
+
         <ul class="stats" aria-label="Informations du test">
-          <li>30 questions</li>
-          <li>30 minutes</li>
-          <li>Mobile-first</li>
+          <li>Questions variées</li>
+          <li>Chronomètre visible</li>
+          <li>Mode hors ligne</li>
+          <li>Résultat détaillé</li>
         </ul>
+
         <p class="notice">Ce quiz est un jeu de logique et ne mesure pas le QI. Il ne remplace pas une évaluation professionnelle.</p>
-        <button class="button primary" id="start" type="button">Commencer <span aria-hidden="true">→</span></button>
+
+        <div class="cta-row">
+          <button class="button primary" id="start" type="button">Commencer <span aria-hidden="true">→</span></button>
+        </div>
       </div>
 
       <div id="quiz" class="quiz" hidden>
@@ -36,25 +54,42 @@
           <span id="question-count" class="eyebrow"></span>
           <span id="progress-label" class="progress-label"></span>
         </div>
+
         <div class="progress-track" role="progressbar" aria-label="Progression du test" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0" id="progress-track">
           <span id="progress-fill"></span>
         </div>
+
         <h2 id="question-title" class="question-title" tabindex="-1"></h2>
         <div id="answers" class="answers" role="group" aria-labelledby="question-title"></div>
-        <p class="hint" id="answer-hint">Sélectionnez la bonne réponse.</p>
+        <p class="hint" id="answer-hint">Sélectionnez la meilleure réponse.</p>
       </div>
 
       <div id="result" class="result" hidden aria-live="polite">
+        <div id="confetti" class="confetti" aria-hidden="true"></div>
         <p class="eyebrow">Fin du test</p>
-        <h1 id="result-title">Résultat</h1>
+        <h1 id="result-title">Résumé final</h1>
+
+        <div class="result-badge" id="result-badge">Niveau intermédiaire</div>
         <p class="score"><span id="score-value">0</span><span class="score-total"> / 30</span></p>
+
+        <div class="score-grid">
+          <div class="score-box">
+            <span class="box-label">Pourcentage</span>
+            <strong id="score-percent">0%</strong>
+          </div>
+          <div class="score-box">
+            <span class="box-label">Temps restant</span>
+            <strong id="time-left-result">30:00</strong>
+          </div>
+        </div>
+
         <p id="result-message" class="lead"></p>
-        <p id="time-message" class="notice"></p>
-        <button class="button primary" id="restart" type="button">Recommencer <span aria-hidden="true">↻</span></button>
+        <p id="time-message" class="notice compact"></p>
+        <button class="button primary" id="restart" type="button">Rejouer <span aria-hidden="true">↻</span></button>
       </div>
     </section>
 
-    <footer>Optimisé pour Android et navigateur mobile.</footer>
+    <footer>Optimisé pour Android, mobile, tablette et navigateur moderne.</footer>
   </main>
 
   <script src="app.js" defer></script>

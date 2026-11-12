@@ -1,21 +1,23 @@
-# TEST-QI
+# TEST-QI Premium
 
-Petit quiz de logique en français, conçu spécialement pour Android et les écrans mobiles.
+Version premium du quiz de logique en français, pensée pour Android et les écrans mobiles.
 
-## Version actuelle
+## Fonctionnalités
 
 - 30 questions
 - 30 minutes
-- mode mobile-first
-- minuteur visible
-- compatible avec installation sur écran d’accueil
+- interface mobile-first premium
+- minuteur visuel et progressive
+- son activable/désactivable
+- score final clair avec badge de niveau
+- animations et confettis visuels
+- installation comme application Android depuis le navigateur
+- compatible avec service worker et mode hors ligne
 
-## Pour tester le site
+## Lancer le test
 
-Ouvrez `index.html` dans un navigateur moderne. Pour l’installation comme application Android, publiez le site en HTTPS (par exemple GitHub Pages) et ouvrez-le dans Chrome Android. Ensuite choisissez **Installer l’application** ou **Ajouter à l’écran d’accueil**.
+Ouvrez `index.html` dans un navigateur moderne. Pour une vraie expérience Android, publiez le site en HTTPS (GitHub Pages, Netlify, Vercel, etc.) puis ouvrez-le dans Chrome Android et choisissez **Installer l’application**.
 
-## Notes
+## Remarque
 
-- Le quiz est un jeu de logique et ne mesure pas le QI.
-- Le service worker fonctionne uniquement en HTTPS ou sur localhost.
-- Aucune donnée personnelle n’est collectée.
+Le quiz est un jeu de logique ludique et ne mesure pas le QI. Il ne remplace pas un test psychométrique professionnel.
